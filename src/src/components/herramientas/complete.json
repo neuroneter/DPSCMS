@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_herramientas_completes",
+  "info": {
+    "displayName": "Complete",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "complete": {
+      "type": "richtext",
+      "required": true
+    },
+    "nombre": {
+      "type": "string",
+      "required": true,
+      "maxLength": 300
+    }
+  }
+}

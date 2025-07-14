@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "medallas",
+  "info": {
+    "singularName": "medalla",
+    "pluralName": "medallas",
+    "displayName": "Medallas",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "mensaje1": {
+      "type": "string"
+    },
+    "mensaje2": {
+      "type": "string"
+    },
+    "nombre": {
+      "type": "string"
+    },
+    "ordenar": {
+      "type": "integer"
+    },
+    "ImagenInactiva": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "rutas": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::ruta.ruta",
+      "inversedBy": "medallas"
+    },
+    "ImagenActiva": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": true
+    }
+  }
+}

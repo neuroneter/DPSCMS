@@ -1,0 +1,113 @@
+{
+  "apis": [
+    {
+      "id": "ofertas",
+      "name": "API de Ofertas",
+      "url": "https://api.ofertas.com/upload-csv",
+      "token": "token_ofertas_123",
+      "description": "API para carga masiva de ofertas laborales",
+      "enabled": true,
+      "validationRules": {
+        "requiredColumns": [
+          "FECHA",
+          "DEPARTAMENTO", 
+          "MUNICIPIO",
+          "NUMERO RIT",
+          "CATEGORIA",
+          "ENTIDAD OFERENTE",
+          "TIPO DE DOCUMENTO",
+          "NUMERO DE DOCUMENTO",
+          "PRIMER NOMBRE",
+          "SEGUNDO NOMBRE",
+          "PRIMER APELLIDO",
+          "SEGUNDO APELLIDO"
+        ],
+        "maxRows": 5000,
+        "columnValidations": {
+          "FECHA": {
+            "type": "date",
+            "format": "YYYY-MM-DD",
+            "required": true
+          },
+          "DEPARTAMENTO": {
+            "type": "string",
+            "pattern": "^\\d{2}$",
+            "required": true,
+            "description": "Código DANE del departamento (exactamente 2 dígitos)",
+            "customValidation": "dane_departamento"
+          },
+          "MUNICIPIO": {
+            "type": "string",
+            "pattern": "^\\d{5}$",
+            "required": true,
+            "description": "Código DANE del municipio (exactamente 5 dígitos)",
+            "customValidation": "dane_municipio",
+            "validateWithDepartment": true
+          }
+        }
+      },
+      "errorMessages": {
+        "file": {
+          "empty": "El archivo CSV está vacío o no contiene datos válidos",
+          "tooLarge": "El archivo excede el límite de {maxRows} filas. Archivo actual: {currentRows} filas",
+          "invalidFormat": "El archivo no tiene un formato CSV válido",
+          "parseError": "Error al procesar el archivo CSV. Verifique el formato"
+        },
+        "structure": {
+          "missingHeaders": "Columnas requeridas faltantes: {missing}",
+          "extraHeaders": "Columnas no reconocidas encontradas: {extra}"
+        },
+        "fields": {
+          "FECHA": {
+            "required": "Fila {row}: El campo FECHA es obligatorio",
+            "invalidFormat": "Fila {row}: FECHA debe tener formato YYYY-MM-DD. Valor actual: \"{value}\"",
+            "invalidDate": "Fila {row}: FECHA no es una fecha válida: \"{value}\""
+          },
+          "DEPARTAMENTO": {
+            "required": "Fila {row}: El campo DEPARTAMENTO es obligatorio",
+            "invalidFormat": "Fila {row}: DEPARTAMENTO debe ser un código DANE de 2 dígitos. Valor actual: \"{value}\""
+          }
+        }
+      },
+      "sampleData": {
+        "headers": [
+          "FECHA",
+          "DEPARTAMENTO",
+          "MUNICIPIO", 
+          "NUMERO RIT",
+          "CATEGORIA",
+          "ENTIDAD OFERENTE",
+          "TIPO DE DOCUMENTO",
+          "NUMERO DE DOCUMENTO",
+          "PRIMER NOMBRE",
+          "SEGUNDO NOMBRE",
+          "PRIMER APELLIDO",
+          "SEGUNDO APELLIDO"
+        ],
+        "exampleRow": [
+          "2024-07-07",
+          "05",
+          "05001",
+          "RIT-2024-001",
+          "AUXILIAR ADMINISTRATIVO",
+          "EMPRESA ABC S.A.S",
+          "CC",
+          "12345678",
+          "JUAN",
+          "CARLOS",
+          "PÉREZ",
+          "GONZÁLEZ"
+        ]
+      }
+    }
+  ],
+  "globalSettings": {
+    "maxFileSize": 15,
+    "allowedDelimiters": [",", ";", "\t"],
+    "defaultDelimiter": ",",
+    "timeout": 45000,
+    "encoding": "utf-8",
+    "allowEmptyRows": false,
+    "trimWhitespace": true
+  }
+}

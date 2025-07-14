@@ -1,0 +1,70 @@
+{
+  "kind": "collectionType",
+  "collectionName": "encuestas",
+  "info": {
+    "singularName": "encuesta",
+    "pluralName": "encuestas",
+    "displayName": "Encuestas",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Pregunta": {
+      "type": "text"
+    },
+    "Respuestas": {
+      "type": "text"
+    },
+    "municipio": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::municipio.municipio"
+    },
+    "perfil_hogar": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::perfil-hogar.perfil-hogar"
+    },
+    "ciclo_vital": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::ciclo-vital.ciclo-vital"
+    },
+    "integrantes": {
+      "type": "richtext"
+    },
+    "fechaFin": {
+      "type": "date"
+    },
+    "fechaEnvio": {
+      "type": "datetime"
+    },
+    "TipoPregunta": {
+      "type": "enumeration",
+      "enum": [
+        "Unica",
+        "Multiple",
+        "NPS",
+        "Informacion",
+        "Abierta"
+      ]
+    },
+    "Nombre": {
+      "type": "text"
+    },
+    "categoria": {
+      "type": "enumeration",
+      "enum": [
+        "Prosperidad",
+        "Ofertas",
+        "Encuesta Satisfaccion"
+      ]
+    },
+    "orden": {
+      "type": "integer"
+    }
+  }
+}

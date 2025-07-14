@@ -1,0 +1,70 @@
+{
+  "kind": "collectionType",
+  "collectionName": "historietas",
+  "info": {
+    "singularName": "historieta",
+    "pluralName": "historietas",
+    "displayName": "Tematica",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "ruta": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::ruta.ruta",
+      "inversedBy": "tematicas"
+    },
+    "nombre": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "audio": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": [
+        "audios"
+      ]
+    },
+    "codigo": {
+      "type": "uid",
+      "targetField": "nombre"
+    },
+    "Iteracciones": {
+      "type": "dynamiczone",
+      "components": [
+        "herramientas.dialogo",
+        "herramientas.pregunta"
+      ],
+      "required": true
+    },
+    "Actividades": {
+      "type": "dynamiczone",
+      "components": [
+        "herramientas.complete",
+        "herramientas.memoria",
+        "herramientas.relacion",
+        "herramientas.sopa-de-letras"
+      ],
+      "required": true
+    },
+    "portada": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "ordenar": {
+      "type": "integer",
+      "required": true,
+      "unique": false
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "categorias",
+  "info": {
+    "singularName": "categoria",
+    "pluralName": "categorias",
+    "displayName": "Categoria",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nombre": {
+      "type": "string",
+      "required": true,
+      "maxLength": 50,
+      "unique": true
+    },
+    "codigo": {
+      "type": "uid",
+      "targetField": "nombre"
+    },
+    "descripcion": {
+      "type": "string",
+      "required": true,
+      "maxLength": 500
+    },
+    "rutas": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ruta.ruta",
+      "mappedBy": "categoria"
+    },
+    "ordenar": {
+      "type": "integer",
+      "required": true,
+      "unique": true
+    },
+    "programas": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::programa.programa",
+      "inversedBy": "categorias"
+    }
+  }
+}

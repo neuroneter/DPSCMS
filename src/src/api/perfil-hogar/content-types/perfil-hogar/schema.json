@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "perfil_hogars",
+  "info": {
+    "singularName": "perfil-hogar",
+    "pluralName": "perfil-hogars",
+    "displayName": "perfil hogar",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nombre": {
+      "type": "string",
+      "required": true
+    },
+    "codigo": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

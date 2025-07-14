@@ -1,0 +1,20 @@
+{
+  "name": "strapi-plugin-csv-uploader",
+  "version": "1.0.0",
+  "description": "CSV uploader plugin for Strapi 5",
+  "strapi": {
+    "name": "csv-uploader",
+    "kind": "plugin",
+    "displayName": "CSV Uploader"
+  },
+  "dependencies": {
+    "papaparse": "^5.4.1"
+  },
+  "peerDependencies": {
+    "@strapi/design-system": "^1.0.0",
+    "@strapi/helper-plugin": "^5.0.0",
+    "react": "^18.0.0"
+  },
+  "author": "Tu Nombre",
+  "license": "MIT"
+}

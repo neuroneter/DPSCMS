@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_herramientas_relacions",
+  "info": {
+    "displayName": "Relacion",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "palabras": {
+      "type": "string",
+      "required": true,
+      "maxLength": 500
+    },
+    "relacion": {
+      "type": "string",
+      "required": true,
+      "maxLength": 500
+    },
+    "nombre": {
+      "type": "string",
+      "required": true,
+      "maxLength": 300
+    }
+  }
+}
