@@ -65,14 +65,18 @@ module.exports = ({ strapi }) => ({
 
   /**
    * POST /csv-uploader/upload
-   * Procesa y envía CSV a API externa
+   * Procesa y envía CSV a API externa con información del usuario
    */
   async uploadCsv(ctx) {
     try {
-      const { apiId, csvData, fileName } = ctx.request.body;
+      const { apiId, csvData, fileName, userInfo } = ctx.request.body;
       
       if (!apiId || !csvData) {
         return ctx.throw(400, 'API ID and CSV data are required');
+      }
+
+      if (!userInfo || !userInfo.userEmail) {
+        return ctx.throw(400, 'User information is required');
       }
 
       const configService = strapi.plugin('csv-uploader').service('config');
@@ -84,9 +88,20 @@ module.exports = ({ strapi }) => ({
         return ctx.throw(404, `API configuration '${apiId}' not found`);
       }
 
+      // Obtener información adicional del usuario si es necesario
+      const enrichedUserInfo = await enrichUserInfo(ctx, userInfo);
+
       // Validar y procesar CSV
       const validationResult = await uploadService.validateCsv(csvData, apiConfig);
       if (!validationResult.isValid) {
+        // Log del intento fallido para auditoría
+        strapi.log.warn(`CSV validation failed for user ${enrichedUserInfo.userEmail}:`, {
+          fileName,
+          apiId,
+          errors: validationResult.errors,
+          user: enrichedUserInfo
+        });
+
         return ctx.send({
           success: false,
           errors: validationResult.errors,
@@ -94,11 +109,32 @@ module.exports = ({ strapi }) => ({
         });
       }
 
-      // Enviar a API externa
-      const uploadResult = await uploadService.sendToExternalApi(
+      // Enviar a API externa con información del usuario
+      const uploadResult = await uploadService.sendToExternalApiWithUser(
         validationResult.processedData, 
-        apiConfig
+        apiConfig,
+        enrichedUserInfo,
+        fileName
       );
+
+      // Log del resultado para auditoría
+      if (uploadResult.success) {
+        strapi.log.info(`CSV upload successful:`, {
+          fileName,
+          apiId,
+          recordsProcessed: uploadResult.recordsProcessed,
+          user: enrichedUserInfo,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        strapi.log.error(`CSV upload failed:`, {
+          fileName,
+          apiId,
+          error: uploadResult.message,
+          user: enrichedUserInfo,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       ctx.send({
         success: uploadResult.success,
@@ -108,7 +144,8 @@ module.exports = ({ strapi }) => ({
           apiId,
           recordsProcessed: uploadResult.recordsProcessed,
           timestamp: new Date().toISOString(),
-          apiResponse: uploadResult.apiResponse
+          apiResponse: uploadResult.apiResponse,
+          uploadedBy: enrichedUserInfo
         }
       });
 
@@ -118,3 +155,34 @@ module.exports = ({ strapi }) => ({
     }
   }
 });
+
+/**
+ * Enriquece la información del usuario con datos adicionales si es necesario
+ */
+async function enrichUserInfo(ctx, userInfo) {
+  try {
+    // Obtener información adicional del usuario desde el contexto de autenticación
+    const user = ctx.state.user;
+    
+    return {
+      ...userInfo,
+      // Información adicional que se puede obtener del contexto
+      authenticatedUserId: user?.id,
+      sessionInfo: {
+        ip: ctx.request.ip,
+        userAgent: ctx.request.header['user-agent'],
+        timestamp: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    strapi.log.warn('Could not enrich user info:', error);
+    return {
+      ...userInfo,
+      sessionInfo: {
+        ip: ctx.request.ip || 'unknown',
+        userAgent: ctx.request.header['user-agent'] || 'unknown',
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+}

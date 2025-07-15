@@ -106,55 +106,155 @@ module.exports = ({ strapi }) => ({
   },
 
   /**
-   * Envía los datos procesados a la API externa
+   * Envía los datos procesados a la API externa con información del usuario
    */
-  async sendToExternalApi(data, apiConfig) {
+  async sendToExternalApiWithUser(data, apiConfig, userInfo, fileName) {
     try {
       const headers = {
         'Content-Type': 'application/json',
         ...(apiConfig.token && { 'Authorization': `Bearer ${apiConfig.token}` })
       };
 
+      // Payload extendido con información del usuario
       const requestPayload = {
+        // Datos del CSV
         data: data,
-        metadata: {
+        
+        // Metadatos del archivo
+        fileMetadata: {
+          fileName: fileName,
           totalRecords: data.length,
-          apiId: apiConfig.id,
-          timestamp: new Date().toISOString()
+          uploadTimestamp: new Date().toISOString(),
+          apiId: apiConfig.id
+        },
+        
+        // Información del usuario que realizó la carga
+        uploadedBy: {
+          userId: userInfo.userId,
+          email: userInfo.userEmail, // CAMPO REQUERIDO por la API
+          name: userInfo.userName,
+          username: userInfo.username,
+          
+          // Información adicional de sesión
+          sessionInfo: userInfo.sessionInfo || {
+            ip: 'unknown',
+            userAgent: 'unknown',
+            timestamp: new Date().toISOString()
+          }
+        },
+        
+        // Información del sistema
+        systemInfo: {
+          source: 'Strapi CMS',
+          version: '5.5.0',
+          plugin: 'csv-uploader',
+          processingTimestamp: new Date().toISOString()
         }
       };
+
+      strapi.log.info(`Sending CSV to external API: ${apiConfig.url}`, {
+        fileName,
+        recordCount: data.length,
+        userEmail: userInfo.userEmail,
+        apiId: apiConfig.id
+      });
 
       const response = await axios.post(apiConfig.url, requestPayload, {
         headers,
         timeout: apiConfig.timeout || 30000
       });
 
+      strapi.log.info(`External API response received:`, {
+        status: response.status,
+        apiId: apiConfig.id,
+        userEmail: userInfo.userEmail,
+        fileName
+      });
+
       return {
         success: true,
-        message: 'CSV enviado exitosamente a la API externa',
+        message: `CSV enviado exitosamente a ${apiConfig.name} por ${userInfo.userEmail}`,
         recordsProcessed: data.length,
         apiResponse: {
           status: response.status,
-          data: response.data
-        }
+          data: response.data,
+          headers: response.headers
+        },
+        userEmail: userInfo.userEmail,
+        userName: userInfo.userName
       };
 
     } catch (error) {
       strapi.log.error('Error sending to external API:', error);
       
       let errorMessage = 'Error al enviar datos a la API externa';
+      let errorDetails = {};
+
       if (error.response) {
+        // Error de respuesta de la API
         errorMessage = `API Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
+        errorDetails = {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        };
       } else if (error.request) {
-        errorMessage = 'No se pudo conectar con la API externa';
+        // Error de conexión
+        errorMessage = 'No se pudo conectar con la API externa - Verificar conectividad';
+        errorDetails = {
+          code: error.code,
+          message: error.message
+        };
+      } else {
+        // Error de configuración
+        errorMessage = `Error de configuración: ${error.message}`;
+        errorDetails = {
+          message: error.message
+        };
       }
+
+      // Log detallado del error para diagnóstico
+      strapi.log.error(`External API Error Details:`, {
+        apiId: apiConfig.id,
+        apiUrl: apiConfig.url,
+        userEmail: userInfo.userEmail,
+        fileName,
+        error: errorDetails,
+        timestamp: new Date().toISOString()
+      });
 
       return {
         success: false,
         message: errorMessage,
         recordsProcessed: 0,
-        error: error.message
+        error: error.message,
+        errorDetails,
+        userEmail: userInfo.userEmail,
+        userName: userInfo.userName
       };
     }
+  },
+
+  /**
+   * Método legacy para compatibilidad (sin información de usuario)
+   * @deprecated Use sendToExternalApiWithUser instead
+   */
+  async sendToExternalApi(data, apiConfig) {
+    strapi.log.warn('Using deprecated sendToExternalApi method without user tracking');
+    
+    // Crear userInfo genérico para mantener compatibilidad
+    const genericUserInfo = {
+      userId: 'legacy',
+      userEmail: 'system@legacy.com',
+      userName: 'Sistema Legacy',
+      username: 'legacy-system',
+      sessionInfo: {
+        ip: 'unknown',
+        userAgent: 'legacy-call',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    return this.sendToExternalApiWithUser(data, apiConfig, genericUserInfo, 'legacy-file.csv');
   }
 });
