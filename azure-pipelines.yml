@@ -1,0 +1,54 @@
+
+trigger:
+  branches:
+    include:
+      - main
+      - Prod
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '18.x'
+    displayName: 'Install Node.js'
+
+  - task: Npm@1
+    inputs:
+      command: 'install'
+      workingDir: '$(System.DefaultWorkingDirectory)/src' # Change working directory
+    displayName: 'Install dependencies'
+
+  - script: |
+      cd src # Change working directory
+      npm update
+      npm install @strapi/plugin-graphql
+      npm install typescript
+      npm run build
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: 'Build Strapi'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src' # Change root folder
+      includeRootFolder: false # Change includeRootFolder to false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/drop.zip'
+      replaceExistingArchive: true
+    displayName: 'Archive files'
+
+  - task: PublishBuildArtifacts@1
+    displayName: Upload as Artifact
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
+
+  - powershell: 'Write-Host "##vso[build.addbuildtag]$(TagPS-AppHogares)" '
+    errorActionPreference: continue
+    displayName: 'Agregar tag al build'
+    continueOnError: true
+    env:
+      Path: C:\WINDOWS\System32\WindowsPowerShell\v1.0\.

@@ -8,12 +8,15 @@
     "displayName": "CSV Uploader"
   },
   "dependencies": {
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "axios": "^1.6.0"
   },
   "peerDependencies": {
-    "@strapi/design-system": "^1.0.0",
-    "@strapi/helper-plugin": "^5.0.0",
-    "react": "^18.0.0"
+    "@strapi/design-system": "^1.6.3",
+    "@strapi/helper-plugin": "^4.25.0",
+    "@strapi/icons": "^1.6.3",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "author": "Tu Nombre",
   "license": "MIT"

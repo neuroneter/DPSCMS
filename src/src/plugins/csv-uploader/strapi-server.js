@@ -1,14 +1,13 @@
-module.exports = {
-  register({ strapi }) {
-    // Registrar el custom field en el servidor
-    strapi.customFields.register({
-      name: 'csv-uploader',
-      plugin: 'csv-uploader',
-      type: 'text',
-    });
-  },
+const register = require('./server/register');
+const bootstrap = require('./server/bootstrap');
+const controllers = require('./server/controllers');
+const routes = require('./server/routes');
+const services = require('./server/services');
 
-  bootstrap({ strapi }) {
-    // Bootstrap del plugin
-  }
+module.exports = {
+  register,
+  bootstrap,
+  controllers,
+  routes,
+  services,
 };

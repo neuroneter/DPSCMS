@@ -1,6 +1,6 @@
 import React from 'react';
-import { FileText } from '@strapi/icons';
+import { Upload } from '@strapi/icons';
 
-const CsvUploaderIcon = () => <FileText />;
+const CsvUploaderIcon = () => <Upload />;
 
 export default CsvUploaderIcon;

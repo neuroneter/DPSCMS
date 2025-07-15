@@ -1,0 +1,25 @@
+{
+  "kind": "collectionType",
+  "collectionName": "test_loads",
+  "info": {
+    "singularName": "test-load",
+    "pluralName": "test-loads",
+    "displayName": "TestLoad"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Carga": {
+      "type": "string"
+    },
+    "Csv": {
+      "type": "customField",
+      "options": {
+        "selectedApi": "ofertas"
+      },
+      "customField": "plugin::csv-uploader.csv-uploader"
+    }
+  }
+}

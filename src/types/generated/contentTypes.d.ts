@@ -907,6 +907,41 @@ export interface ApiRutaRuta extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiTestLoadTestLoad extends Struct.CollectionTypeSchema {
+  collectionName: 'test_loads';
+  info: {
+    displayName: 'TestLoad';
+    pluralName: 'test-loads';
+    singularName: 'test-load';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    Carga: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    Csv: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<
+        'plugin::csv-uploader.csv-uploader',
+        {
+          selectedApi: 'ofertas';
+        }
+      >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::test-load.test-load'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginContentReleasesRelease
   extends Struct.CollectionTypeSchema {
   collectionName: 'strapi_releases';
@@ -1429,6 +1464,7 @@ declare module '@strapi/strapi' {
       'api::pqr.pqr': ApiPqrPqr;
       'api::programa.programa': ApiProgramaPrograma;
       'api::ruta.ruta': ApiRutaRuta;
+      'api::test-load.test-load': ApiTestLoadTestLoad;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
