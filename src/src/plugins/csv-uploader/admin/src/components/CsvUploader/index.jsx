@@ -18,12 +18,10 @@ const CsvUploader = ({
   const [apiConfig, setApiConfig] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [debugInfo, setDebugInfo] = useState('');
-  const [apiResults, setApiResults] = useState({});
-  const [successfulResponses, setSuccessfulResponses] = useState([]);
 
   useEffect(() => {
-    console.log('🔍 [CSV Uploader] Leyendo respuestas exitosas de APIs Strapi v5...');
-    getCurrentUserFromSuccessfulAPIs();
+    console.log('🔍 [CSV Uploader] MÉTODO CON API TOKEN V5 - Obteniendo usuario...');
+    getUserFromJWT();
   }, []);
 
   useEffect(() => {
@@ -42,212 +40,349 @@ const CsvUploader = ({
     }
   }, [attribute?.options?.selectedApi]);
 
-  const getCurrentUserFromSuccessfulAPIs = async () => {
+  const getUserFromJWT = async () => {
     try {
-      console.log('🔍 [CSV Uploader] === LEYENDO RESPUESTAS EXITOSAS DE APIS ===');
+      console.log('🔍 [CSV Uploader] === SOLUCIÓN DINÁMICA CON API TOKEN V5 ===');
       
-      // Obtener el token (corrupto o no, lo usaremos para las llamadas)
-      const jwtToken = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+      // Token específico para el plugin CSV Uploader
+      const API_TOKEN = 'd49655c5087403a2a3b70abc8f97eb628f84ba1d291cb683ad0d2f5a26cba03c5a0ec4aeba2c834d327bdcb9dff7e27bd9d60cac75092b3d97a65c02427510b2c4b6a6237ce5c9fa035e23bb2bdd02e3a9c915355165ab137021a05b71f10dd824e8d0837e9a954dd3285a1cc9afbebb53e2e122788320d9b3391defd3182ecf';
+      
+      // Obtener token JWT para obtener el user ID
+      const jwtToken = sessionStorage.getItem('jwtToken') || localStorage.getItem('jwtToken');
       
       if (!jwtToken) {
-        console.log('❌ [CSV Uploader] No hay jwtToken disponible');
-        setDebugInfo('No hay token JWT disponible');
+        console.log('❌ [CSV Uploader] No hay JWT token para obtener user ID');
         setFallbackUser();
         return;
       }
 
-      console.log('🔍 [CSV Uploader] Token disponible, probando APIs exitosas...');
+      console.log('✅ [CSV Uploader] JWT Token encontrado');
+      console.log('✅ [CSV Uploader] API Token configurado para consultas');
 
-      // APIs que sabemos que responden exitosamente
-      const successfulEndpoints = [
-        '/admin/auth/user',
-        '/admin/auth/profile', 
-        '/admin/me',
-        '/admin/user/me',
-        '/admin/current-user'
-      ];
+      // PASO 1: Decodificar JWT para obtener el ID del usuario conectado
+      let jwtUserId = null;
+      try {
+        const base64Url = jwtToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const tokenData = JSON.parse(jsonPayload);
+        console.log('✅ [CSV Uploader] JWT decodificado:', tokenData);
+        jwtUserId = tokenData.id;
+        console.log(`🎯 [CSV Uploader] ID del usuario conectado (JWT): ${jwtUserId}`);
+      } catch (jwtError) {
+        console.log('❌ [CSV Uploader] Error decodificando JWT:', jwtError);
+        setFallbackUser();
+        return;
+      }
 
-      const results = {};
-      const responses = [];
+      // PASO 2: Buscar información del usuario ACTUAL conectado en sesión
+      console.log('🔍 [CSV Uploader] === BUSCANDO USUARIO ACTUAL EN SESIÓN ===');
       
-      for (const endpoint of successfulEndpoints) {
-        try {
-          console.log(`🔍 [CSV Uploader] Leyendo respuesta de: ${endpoint}`);
-          
-          const response = await fetch(endpoint, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${jwtToken}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            credentials: 'include'
-          });
-
-          results[endpoint] = {
-            status: response.status,
-            ok: response.ok
-          };
-
-          console.log(`🔍 [CSV Uploader] ${endpoint} -> Status: ${response.status}`);
-          
-          if (response.ok) {
-            try {
-              const data = await response.json();
-              results[endpoint].data = data;
-              
-              console.log(`✅ [CSV Uploader] ${endpoint} datos recibidos:`, data);
-              console.log(`🔍 [CSV Uploader] ${endpoint} estructura:`, Object.keys(data));
-              console.log(`🔍 [CSV Uploader] ${endpoint} contenido completo:`, JSON.stringify(data, null, 2));
-              
-              responses.push({
-                endpoint,
-                data,
-                rawResponse: JSON.stringify(data, null, 2)
-              });
-              
-              // Buscar información de usuario en diferentes ubicaciones
-              const possibleUserData = [
-                data,
-                data.data,
-                data.user,
-                data.result,
-                data.payload,
-                data.response,
-                data.body,
-                data.content
-              ];
-              
-              for (const userData of possibleUserData) {
-                if (userData && typeof userData === 'object') {
-                  console.log(`🔍 [CSV Uploader] Analizando userData:`, userData);
-                  console.log(`🔍 [CSV Uploader] Propiedades userData:`, Object.keys(userData));
-                  
-                  // Buscar email directamente
-                  if (userData.email && userData.email.includes('@')) {
-                    console.log(`🎯 [CSV Uploader] ¡EMAIL ENCONTRADO en ${endpoint}!:`, userData.email);
-                    
-                    const userInfo = {
-                      id: userData.id || userData._id || userData.userId || 'api-user',
-                      email: userData.email,
-                      firstname: userData.firstname || userData.first_name || userData.given_name || userData.name || 'Usuario',
-                      lastname: userData.lastname || userData.last_name || userData.family_name || userData.surname || 'Real',
-                      username: userData.username || userData.login || userData.email,
-                      source: `api-${endpoint}`,
-                      fullData: userData
-                    };
-                    
-                    setCurrentUser(userInfo);
-                    setDebugInfo(`¡Usuario REAL encontrado vía ${endpoint}!: ${userInfo.email}`);
-                    setApiResults(results);
-                    setSuccessfulResponses(responses);
-                    console.log('✅ [CSV Uploader] ¡USUARIO REAL ENCONTRADO!:', userInfo);
-                    return; // ¡ÉXITO! Salir aquí
+      let currentUserInfo = null;
+      
+      // Buscar en localStorage y sessionStorage información del usuario actual
+      const searchCurrentUserInStorage = (storage, storageName) => {
+        const keys = Object.keys(storage);
+        console.log(`🔍 [CSV Uploader] Buscando usuario actual en ${storageName}:`, keys);
+        
+        for (const key of keys) {
+          try {
+            const value = storage.getItem(key);
+            if (value) {
+              try {
+                const parsed = JSON.parse(value);
+                
+                // Buscar objetos que contengan email (indicador de info de usuario)
+                if (parsed && typeof parsed === 'object') {
+                  if (parsed.email && parsed.email.includes('@')) {
+                    console.log(`🎯 [CSV Uploader] ¡Info de usuario encontrada en ${storageName}.${key}!:`, parsed);
+                    return parsed;
                   }
                   
-                  // Buscar más profundo si es un objeto
-                  const searchDeeper = (obj, path = '') => {
-                    if (!obj || typeof obj !== 'object' || path.split('.').length > 3) return null;
+                  // Buscar email anidado
+                  const searchEmail = (obj) => {
+                    if (!obj || typeof obj !== 'object') return null;
                     
-                    for (const [key, value] of Object.entries(obj)) {
-                      const currentPath = path ? `${path}.${key}` : key;
-                      
-                      if (value && typeof value === 'object' && value.email && value.email.includes('@')) {
-                        console.log(`🎯 [CSV Uploader] ¡EMAIL ENCONTRADO en ${endpoint}.${currentPath}!:`, value.email);
-                        return {
-                          id: value.id || value._id || 'nested-user',
-                          email: value.email,
-                          firstname: value.firstname || value.name || 'Usuario',
-                          lastname: value.lastname || 'Nested',
-                          username: value.username || value.email,
-                          source: `api-${endpoint}.${currentPath}`,
-                          fullData: value
-                        };
+                    for (const [k, v] of Object.entries(obj)) {
+                      if (typeof v === 'string' && v.includes('@') && v.includes('.')) {
+                        return { email: v, fullData: obj };
                       }
-                      
-                      if (value && typeof value === 'object') {
-                        const found = searchDeeper(value, currentPath);
+                      if (v && typeof v === 'object') {
+                        const found = searchEmail(v);
                         if (found) return found;
                       }
                     }
                     return null;
                   };
                   
-                  const nestedUser = searchDeeper(userData);
-                  if (nestedUser) {
-                    setCurrentUser(nestedUser);
-                    setDebugInfo(`¡Usuario REAL encontrado (nested) vía ${endpoint}!: ${nestedUser.email}`);
-                    setApiResults(results);
-                    setSuccessfulResponses(responses);
-                    console.log('✅ [CSV Uploader] ¡USUARIO REAL ENCONTRADO (nested)!:', nestedUser);
-                    return; // ¡ÉXITO! Salir aquí
+                  const foundEmail = searchEmail(parsed);
+                  if (foundEmail) {
+                    console.log(`🎯 [CSV Uploader] ¡Email encontrado en ${storageName}.${key}!:`, foundEmail);
+                    return foundEmail.fullData;
                   }
                 }
-              }
-              
-              // Si no encontramos email, pero hay datos, registrarlo para análisis
-              console.log(`⚠️ [CSV Uploader] ${endpoint} tiene datos pero sin email directo`);
-              
-            } catch (jsonError) {
-              results[endpoint].jsonError = jsonError.message;
-              console.log(`❌ [CSV Uploader] ${endpoint} - Error parseando JSON:`, jsonError);
-              
-              // Intentar leer como texto plano
-              try {
-                const textData = await response.text();
-                console.log(`🔍 [CSV Uploader] ${endpoint} respuesta como texto:`, textData);
-                results[endpoint].textData = textData;
                 
-                // Buscar email en el texto
-                const emailMatch = textData.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-                if (emailMatch) {
-                  console.log(`🎯 [CSV Uploader] ¡EMAIL encontrado en texto de ${endpoint}!:`, emailMatch[0]);
+              } catch (parseError) {
+                // Si no es JSON válido, verificar si es un email directo
+                if (typeof value === 'string' && value.includes('@') && value.includes('.')) {
+                  console.log(`🎯 [CSV Uploader] ¡Email directo encontrado en ${storageName}.${key}!:`, value);
+                  return { email: value, source: `${storageName}.${key}` };
+                }
+              }
+            }
+          } catch (error) {
+            console.log(`❌ [CSV Uploader] Error accediendo ${storageName}.${key}:`, error);
+          }
+        }
+        return null;
+      };
+
+      // Buscar en ambos storages
+      currentUserInfo = searchCurrentUserInStorage(sessionStorage, 'sessionStorage') || 
+                       searchCurrentUserInStorage(localStorage, 'localStorage');
+
+      if (currentUserInfo) {
+        console.log(`✅ [CSV Uploader] Usuario actual encontrado en sesión:`, currentUserInfo);
+      } else {
+        console.log(`⚠️ [CSV Uploader] No se encontró info del usuario actual en sesión`);
+      }
+
+      // PASO 3: Estrategias dinámicas para encontrar el usuario ACTUAL
+      console.log('🔍 [CSV Uploader] === ESTRATEGIAS DINÁMICAS PARA USUARIO ACTUAL ===');
+      
+      // Estrategia 1: Buscar por ID del JWT (admin_users)
+      console.log(`🔍 [CSV Uploader] Estrategia 1: Buscar por ID del JWT: ${jwtUserId}`);
+      
+      const idEndpoints = [
+        `/api/admin/users/${jwtUserId}`,
+        `/admin/users/${jwtUserId}`,
+        `/api/users/${jwtUserId}`,
+        `/api/users?filters[id][$eq]=${jwtUserId}`,
+        `/admin/users?filters[id][$eq]=${jwtUserId}`,
+      ];
+
+      for (const endpoint of idEndpoints) {
+        try {
+          console.log(`🔍 [CSV Uploader] Probando ID: ${endpoint}`);
+          
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${API_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log(`🔍 [CSV Uploader] ${endpoint} - Status: ${response.status}`);
+          
+          if (response.ok) {
+            const responseText = await response.text();
+            console.log(`✅ [CSV Uploader] ${endpoint} - Respuesta (300 chars):`, responseText.substring(0, 300));
+            
+            if (responseText.trim() && responseText.trim() !== '[]' && responseText.trim() !== '') {
+              try {
+                const data = JSON.parse(responseText);
+                console.log(`✅ [CSV Uploader] ${endpoint} - Data parseada:`, data);
+                
+                // Buscar usuario en diferentes estructuras
+                const user = data.data || data[0] || data;
+                
+                if (user && user.email) {
+                  console.log(`🎯 [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO por ID en ${endpoint}!:`, user);
                   
                   const userInfo = {
-                    id: 'text-extracted',
-                    email: emailMatch[0],
-                    firstname: 'Usuario',
-                    lastname: 'Extraído',
-                    username: emailMatch[0],
-                    source: `text-${endpoint}`,
-                    rawText: textData
+                    id: user.id || jwtUserId,
+                    email: user.email,
+                    firstname: user.firstname || user.name || 'Usuario',
+                    lastname: user.lastname || user.surname || 'Actual',
+                    username: user.username || user.email,
+                    roles: user.roles || ['user'],
+                    source: `${endpoint}-id-search`,
+                    fullData: user,
+                    note: `Usuario actual encontrado por ID usando API Token`,
+                    authMethod: 'api-token',
+                    realId: user.id || jwtUserId
                   };
                   
                   setCurrentUser(userInfo);
-                  setDebugInfo(`¡Usuario extraído de texto vía ${endpoint}!: ${userInfo.email}`);
-                  setApiResults(results);
-                  setSuccessfulResponses(responses);
-                  console.log('✅ [CSV Uploader] ¡USUARIO EXTRAÍDO DE TEXTO!:', userInfo);
-                  return; // ¡ÉXITO! Salir aquí
+                  setDebugInfo(`✅ USUARIO ACTUAL ENCONTRADO: ${user.email} (ID: ${userInfo.realId})`);
+                  console.log('✅ [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO POR ID!:', userInfo);
+                  return;
                 }
-              } catch (textError) {
-                console.log(`❌ [CSV Uploader] ${endpoint} - Error leyendo como texto:`, textError);
+              } catch (parseError) {
+                console.log(`❌ [CSV Uploader] ${endpoint} - Error parsing JSON:`, parseError);
               }
             }
-          } else {
-            console.log(`❌ [CSV Uploader] ${endpoint} - Status no exitoso: ${response.status}`);
           }
         } catch (fetchError) {
-          results[endpoint] = {
-            fetchError: fetchError.message
-          };
-          console.log(`❌ [CSV Uploader] Error fetch en ${endpoint}:`, fetchError);
+          console.log(`❌ [CSV Uploader] ${endpoint} - Error:`, fetchError.message);
         }
       }
-      
-      setApiResults(results);
-      setSuccessfulResponses(responses);
 
-      // Si llegamos aquí, tenemos respuestas pero no encontramos usuario
-      console.log('⚠️ [CSV Uploader] Respuestas exitosas pero sin usuario identificable');
-      console.log('📊 [CSV Uploader] Resumen de respuestas:', responses);
+      // Estrategia 2: Buscar por email encontrado en sesión
+      if (currentUserInfo && currentUserInfo.email) {
+        console.log(`🔍 [CSV Uploader] Estrategia 2: Buscar por email de sesión: ${currentUserInfo.email}`);
+        
+        const emailEndpoints = [
+          `/api/users?filters[email][$eq]=${currentUserInfo.email}`,
+          `/api/admin/users?filters[email][$eq]=${currentUserInfo.email}`,
+          `/admin/users?filters[email][$eq]=${currentUserInfo.email}`,
+        ];
+
+        for (const endpoint of emailEndpoints) {
+          try {
+            console.log(`🔍 [CSV Uploader] Probando email: ${endpoint}`);
+            
+            const response = await fetch(endpoint, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${API_TOKEN}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            console.log(`🔍 [CSV Uploader] ${endpoint} - Status: ${response.status}`);
+            
+            if (response.ok) {
+              const responseText = await response.text();
+              console.log(`✅ [CSV Uploader] ${endpoint} - Respuesta (300 chars):`, responseText.substring(0, 300));
+              
+              if (responseText.trim() && responseText.trim() !== '[]') {
+                try {
+                  const data = JSON.parse(responseText);
+                  console.log(`✅ [CSV Uploader] ${endpoint} - Data parseada:`, data);
+                  
+                  const users = Array.isArray(data) ? data : (data.data || []);
+                  const user = users.find(u => u && u.email === currentUserInfo.email);
+                  
+                  if (user) {
+                    console.log(`🎯 [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO por email en ${endpoint}!:`, user);
+                    
+                    const userInfo = {
+                      id: user.id,
+                      email: user.email,
+                      firstname: user.firstname || user.name || 'Usuario',
+                      lastname: user.lastname || user.surname || 'Actual',
+                      username: user.username || user.email,
+                      roles: user.roles || ['user'],
+                      source: `${endpoint}-email-search`,
+                      fullData: user,
+                      note: `Usuario actual encontrado por email de sesión usando API Token`,
+                      authMethod: 'api-token',
+                      realId: user.id
+                    };
+                    
+                    setCurrentUser(userInfo);
+                    setDebugInfo(`✅ USUARIO ACTUAL ENCONTRADO: ${user.email} (ID: ${user.id})`);
+                    console.log('✅ [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO POR EMAIL!:', userInfo);
+                    return;
+                  }
+                } catch (parseError) {
+                  console.log(`❌ [CSV Uploader] ${endpoint} - Error parsing JSON:`, parseError);
+                }
+              }
+            }
+          } catch (fetchError) {
+            console.log(`❌ [CSV Uploader] ${endpoint} - Error:`, fetchError.message);
+          }
+        }
+      }
+
+      // Estrategia 3: Usar endpoints /me dinámicos
+      console.log(`🔍 [CSV Uploader] Estrategia 3: Endpoints /me dinámicos`);
       
-      setDebugInfo('APIs responden pero no se encontró información de usuario - Ver respuestas abajo');
-      setFallbackUser();
+      const meEndpoints = [
+        `/api/users/me`,
+        `/api/admin/users/me`,
+        `/admin/users/me`,
+        `/admin/me`,
+      ];
+
+      for (const endpoint of meEndpoints) {
+        try {
+          console.log(`🔍 [CSV Uploader] Probando /me: ${endpoint}`);
+          
+          // Usar JWT token para endpoints /me
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${jwtToken}`, // JWT token para /me
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log(`🔍 [CSV Uploader] ${endpoint} - Status: ${response.status}`);
+          
+          if (response.ok) {
+            const responseText = await response.text();
+            console.log(`✅ [CSV Uploader] ${endpoint} - Respuesta (300 chars):`, responseText.substring(0, 300));
+            
+            if (responseText.trim() && !responseText.includes('<!doctype html>')) {
+              try {
+                const data = JSON.parse(responseText);
+                console.log(`✅ [CSV Uploader] ${endpoint} - Data parseada:`, data);
+                
+                const user = data.data || data.user || data;
+                
+                if (user && user.email) {
+                  console.log(`🎯 [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO en /me ${endpoint}!:`, user);
+                  
+                  const userInfo = {
+                    id: user.id || jwtUserId,
+                    email: user.email,
+                    firstname: user.firstname || user.name || 'Usuario',
+                    lastname: user.lastname || user.surname || 'Actual',
+                    username: user.username || user.email,
+                    roles: user.roles || ['user'],
+                    source: `${endpoint}-me-search`,
+                    fullData: user,
+                    note: `Usuario actual encontrado en endpoint /me usando JWT`,
+                    authMethod: 'jwt-token',
+                    realId: user.id || jwtUserId
+                  };
+                  
+                  setCurrentUser(userInfo);
+                  setDebugInfo(`✅ USUARIO ACTUAL ENCONTRADO: ${user.email} (ID: ${userInfo.realId})`);
+                  console.log('✅ [CSV Uploader] ¡USUARIO ACTUAL ENCONTRADO EN /ME!:', userInfo);
+                  return;
+                }
+              } catch (parseError) {
+                console.log(`❌ [CSV Uploader] ${endpoint} - Error parsing JSON:`, parseError);
+              }
+            }
+          }
+        } catch (fetchError) {
+          console.log(`❌ [CSV Uploader] ${endpoint} - Error:`, fetchError.message);
+        }
+      }
+
+      // Fallback: Crear usuario con información de sesión si está disponible
+      console.log('⚠️ [CSV Uploader] Usando información de sesión como fallback');
+      
+      const fallbackUser = {
+        id: jwtUserId || 'session-user',
+        email: currentUserInfo?.email || `user${jwtUserId}@sistema.local`,
+        firstname: currentUserInfo?.firstname || currentUserInfo?.name || 'Usuario',
+        lastname: currentUserInfo?.lastname || currentUserInfo?.surname || 'Actual',
+        username: currentUserInfo?.username || currentUserInfo?.email || `user${jwtUserId}`,
+        roles: currentUserInfo?.roles || ['user'],
+        source: 'session-fallback',
+        sessionInfo: currentUserInfo,
+        jwtData: { id: jwtUserId },
+        note: 'Usuario creado con información de sesión disponible',
+        authMethod: 'session-data',
+        realId: jwtUserId
+      };
+      
+      setCurrentUser(fallbackUser);
+      setDebugInfo(`✅ Usuario de sesión identificado: ${fallbackUser.email} (ID: ${jwtUserId})`);
+      console.log('✅ [CSV Uploader] Usuario identificado desde sesión:', fallbackUser);
 
     } catch (error) {
       console.error('❌ [CSV Uploader] Error general:', error);
-      setDebugInfo(`Error: ${error.message}`);
       setFallbackUser();
     }
   };
@@ -262,6 +397,7 @@ const CsvUploader = ({
       source: 'fallback'
     };
     setCurrentUser(fallbackUser);
+    setDebugInfo('❌ Usuario fallback - No se pudo identificar');
   };
 
   const handleFileChange = (event) => {
@@ -313,7 +449,11 @@ const CsvUploader = ({
           userEmail: currentUser.email,
           userName: `${currentUser.firstname} ${currentUser.lastname}`.trim(),
           username: currentUser.username,
-          source: currentUser.source || 'unknown'
+          source: currentUser.source || 'unknown',
+          roles: currentUser.roles || [],
+          isRealUser: currentUser.source !== 'fallback',
+          note: currentUser.note || null,
+          authMethod: currentUser.authMethod || 'unknown'
         }
       };
       
@@ -366,47 +506,23 @@ const CsvUploader = ({
 
   const debugStyle = {
     padding: '8px 12px',
-    backgroundColor: debugInfo.includes('¡Usuario REAL encontrado') ? '#d4edda' : '#fff3cd',
+    backgroundColor: debugInfo.includes('✅') ? '#d4edda' : debugInfo.includes('❌') ? '#f8d7da' : '#fff3cd',
     borderRadius: '4px',
     marginBottom: '12px',
-    border: debugInfo.includes('¡Usuario REAL encontrado') ? '1px solid #c3e6cb' : '1px solid #ffeeba',
+    border: debugInfo.includes('✅') ? '1px solid #c3e6cb' : debugInfo.includes('❌') ? '1px solid #f5c6cb' : '1px solid #ffeeba',
     fontSize: '11px',
-    color: debugInfo.includes('¡Usuario REAL encontrado') ? '#155724' : '#856404',
+    color: debugInfo.includes('✅') ? '#155724' : debugInfo.includes('❌') ? '#721c24' : '#856404',
     fontFamily: 'monospace'
-  };
-
-  const apiResultsStyle = {
-    padding: '8px 12px',
-    backgroundColor: '#f3e5f5',
-    borderRadius: '4px',
-    marginBottom: '12px',
-    border: '1px solid #e1bee7',
-    fontSize: '10px',
-    fontFamily: 'monospace',
-    maxHeight: '100px',
-    overflowY: 'auto'
-  };
-
-  const responsesStyle = {
-    padding: '8px 12px',
-    backgroundColor: '#e8f5e8',
-    borderRadius: '4px',
-    marginBottom: '12px',
-    border: '1px solid #c3e6cb',
-    fontSize: '10px',
-    fontFamily: 'monospace',
-    maxHeight: '200px',
-    overflowY: 'auto'
   };
 
   const userInfoStyle = {
     padding: '8px 12px',
-    backgroundColor: currentUser?.email === 'usuario@sistema.com' ? '#fff3cd' : '#e6f3ff',
+    backgroundColor: currentUser?.source === 'fallback' ? '#fff3cd' : '#e6f3ff',
     borderRadius: '4px',
     marginBottom: '12px',
-    border: currentUser?.email === 'usuario@sistema.com' ? '1px solid #ffeeba' : '1px solid #b3d9ff',
+    border: currentUser?.source === 'fallback' ? '1px solid #ffeeba' : '1px solid #b3d9ff',
     fontSize: '12px',
-    color: currentUser?.email === 'usuario@sistema.com' ? '#856404' : '#0066cc'
+    color: currentUser?.source === 'fallback' ? '#856404' : '#0066cc'
   };
 
   const storedData = parseStoredValue(value);
@@ -421,36 +537,7 @@ const CsvUploader = ({
       {/* Debug info */}
       {debugInfo && (
         <div style={debugStyle}>
-          🐛 Debug: {debugInfo}
-        </div>
-      )}
-
-      {/* API Results */}
-      {Object.keys(apiResults).length > 0 && (
-        <div style={apiResultsStyle}>
-          <strong>📡 Resultados API:</strong>
-          <br />
-          {Object.entries(apiResults).map(([endpoint, result]) => (
-            <div key={endpoint}>
-              {endpoint}: {result.status || 'Error'} {result.ok ? '✅' : '❌'}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Successful Responses */}
-      {successfulResponses.length > 0 && (
-        <div style={responsesStyle}>
-          <strong>📋 Respuestas Exitosas ({successfulResponses.length}):</strong>
-          <br />
-          {successfulResponses.map((response, index) => (
-            <div key={index} style={{ marginBottom: '8px', borderBottom: '1px solid #ddd', paddingBottom: '4px' }}>
-              <strong>{response.endpoint}:</strong>
-              <br />
-              {response.rawResponse.substring(0, 300)}
-              {response.rawResponse.length > 300 && '...'}
-            </div>
-          ))}
+          🐛 Debug API Token: {debugInfo}
         </div>
       )}
 
@@ -459,9 +546,20 @@ const CsvUploader = ({
         <div style={userInfoStyle}>
           👤 Usuario: <strong>{currentUser.firstname} {currentUser.lastname}</strong> ({currentUser.email})
           {currentUser.source && <span style={{marginLeft: '8px'}}>📍{currentUser.source}</span>}
-          {currentUser.email === 'usuario@sistema.com' && (
+          {currentUser.authMethod && <span style={{marginLeft: '8px'}}>🔑{currentUser.authMethod}</span>}
+          {currentUser.id && currentUser.id !== 'fallback-user' && (
             <div style={{ marginTop: '4px', fontSize: '11px' }}>
-              ⚠️ Usuario fallback - Ver respuestas de APIs arriba
+              🆔 ID Sistema: {currentUser.id}
+            </div>
+          )}
+          {currentUser.note && (
+            <div style={{ marginTop: '4px', fontSize: '11px', fontStyle: 'italic' }}>
+              📝 {currentUser.note}
+            </div>
+          )}
+          {currentUser.source === 'fallback' && (
+            <div style={{ marginTop: '4px', fontSize: '11px', color: '#d63384' }}>
+              ⚠️ Usuario fallback - Ver consola para detalles
             </div>
           )}
         </div>
@@ -543,7 +641,11 @@ const CsvUploader = ({
               <>
                 {'\n'}👤 Usuario: {storedData.uploadedBy.userName || 'N/A'}
                 {'\n'}📧 Email: {storedData.uploadedBy.userEmail || 'N/A'}
+                {'\n'}🆔 ID: {storedData.uploadedBy.userId || 'N/A'}
                 {storedData.uploadedBy.source && `\n📍 Fuente: ${storedData.uploadedBy.source}`}
+                {storedData.uploadedBy.authMethod && `\n🔑 Método: ${storedData.uploadedBy.authMethod}`}
+                {storedData.uploadedBy.isRealUser !== undefined && `\n✅ Usuario Real: ${storedData.uploadedBy.isRealUser ? 'Sí' : 'No'}`}
+                {storedData.uploadedBy.note && `\n📝 Nota: ${storedData.uploadedBy.note}`}
               </>
             )}
             {'\n'}✅ Estado: {storedData.status || 'N/A'}

@@ -4,7 +4,7 @@ export default {
     app.customFields.register({
       name: 'csv-uploader',
       pluginId: 'csv-uploader',
-      type: 'text', // Cambiar de 'json' a 'text'
+      type: 'json', // ✅ CORREGIDO: Cambiado de 'text' a 'json'
       intlLabel: {
         id: 'csv-uploader.label',
         defaultMessage: 'CSV Uploader',
