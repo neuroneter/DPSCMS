@@ -1,0 +1,24 @@
+{
+  "name": "strapi-plugin-reportes",
+  "version": "1.0.0",
+  "description": "Plugin de importación masiva para Collection Types en Strapi 5",
+  "strapi": {
+    "name": "reportes",
+    "kind": "plugin",
+    "displayName": "Reportes"
+  },
+  "dependencies": {
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
+  },
+  "peerDependencies": {
+    "@strapi/design-system": "^1.19.0",
+    "@strapi/helper-plugin": "^4.25.0",
+    "@strapi/icons": "^1.19.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "author": "Tu Nombre",
+  "license": "MIT"
+}

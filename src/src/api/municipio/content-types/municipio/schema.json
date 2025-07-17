@@ -19,7 +19,8 @@
     "codigo": {
       "type": "string",
       "required": true,
-      "default": "00"
+      "default": "00",
+      "regex": "\\d[1-9]"
     }
   }
 }

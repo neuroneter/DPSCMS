@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "test_contens",
+  "info": {
+    "singularName": "test-conten",
+    "pluralName": "test-contens",
+    "displayName": "Test Conten",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Hola": {
+      "type": "string",
+      "required": true,
+      "maxLength": 2,
+      "minLength": 1,
+      "unique": true
+    },
+    "Ingresos": {
+      "type": "biginteger",
+      "required": true
+    }
+  }
+}
