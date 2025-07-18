@@ -4,7 +4,6 @@
  */
 import graphql from "@strapi/plugin-graphql/strapi-admin";
 import usersPermissions from "@strapi/plugin-users-permissions/strapi-admin";
-import csvUploader from "../../src/plugins/csv-uploader/strapi-admin";
 import reportes from "../../src/plugins/reportes/strapi-admin";
 import { renderAdmin } from "@strapi/strapi/admin";
 
@@ -16,7 +15,6 @@ renderAdmin(document.getElementById("strapi"), {
   plugins: {
     graphql: graphql,
     "users-permissions": usersPermissions,
-    "csv-uploader": csvUploader,
     reportes: reportes,
   },
 });

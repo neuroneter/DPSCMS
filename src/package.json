@@ -10,15 +10,13 @@
     "strapi": "node node_modules/@strapi/strapi/bin/strapi.js"
   },
   "dependencies": {
-    "@strapi/design-system": "^1.19.0",
-    "@strapi/icons": "^1.19.0",
     "@strapi/plugin-graphql": "^5.5.0",
     "@strapi/plugin-users-permissions": "5.5.0",
     "@strapi/strapi": "5.5.0",
-    "axios": "^1.10.0",
-    "mime-types": "^3.0.1",
+    "better-sqlite3": "^12.2.0",
+    "dotenv": "^17.2.0",
     "mysql": "2.18.1",
-    "mysql2": "^3.11.5",
+    "mysql2": "^3.14.2",
     "papaparse": "^5.5.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

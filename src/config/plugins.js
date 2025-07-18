@@ -1,15 +1,8 @@
 module.exports = ({ env }) => ({
-  
-  'csv-uploader': {
-    enabled: true,
-    resolve: './src/plugins/csv-uploader'
-  },
-
   'reportes': {
     enabled: true,
     resolve: './src/plugins/reportes'
   },
-
   upload: {
     config: {
       provider: "strapi-provider-upload-azure-storage",

@@ -326,31 +326,11 @@ const handleImportFile = async () => {
 
   return (
     <div style={{ 
-      padding: '20px', 
+      padding: '10px 30px', 
       fontFamily: 'Inter, Arial, sans-serif',
-      maxWidth: '1200px',
+      maxWidth: '1900px',
       margin: '0 auto'
     }}>
-      <h1 style={{ color: '#2e44a7', marginBottom: '10px' }}>
-        🎯 Plugin Reportes - Importación Masiva
-      </h1>
-      
-      <p style={{ color: '#666', marginBottom: '30px' }}>
-        Importa datos desde archivos CSV y Excel a tus Reportes
-      </p>
-
-      {/* Estado de conexión */}
-      <div style={{ 
-        padding: '15px', 
-        border: '1px solid #ddd', 
-        borderRadius: '6px', 
-        marginBottom: '20px',
-        backgroundColor: '#f8f9fa'
-      }}>
-        <h3 style={{ margin: '0 0 10px 0' }}>📊 Estado del Sistema</h3>
-        <p style={{ margin: 0 }}>{backendStatus}</p>
-      </div>
-
       {/* Selector de Collection Types */}
       <div style={{ 
         padding: '20px', 
@@ -398,32 +378,8 @@ const handleImportFile = async () => {
           </div>
         )}
 
-        {collections.length > 0 && (
-          <div style={{ 
-            padding: '10px', 
-            backgroundColor: '#d4edda', 
-            border: '1px solid #c3e6cb',
-            borderRadius: '4px',
-            color: '#155724'
-          }}>
-            ✅ {collections.length} Collection Type(s) disponible(s)
-          </div>
-        )}
 
-        {selectedCollection && (
-  <div style={{ 
-    marginTop: '15px',
-    padding: '10px', 
-    backgroundColor: '#e6f3ff', 
-    border: '1px solid #b3d9ff',
-    borderRadius: '4px',
-    color: '#0066cc'
-  }}>
-    Selecciona un reporte: <strong>
-      {collections.find(c => c.uid === selectedCollection)?.displayName || selectedCollection}
-    </strong>
-  </div>
-        )}
+      
 
         {/* Reglas de Validación */}
         {selectedCollection && (
@@ -687,23 +643,7 @@ const handleImportFile = async () => {
         </div>
         )}
 
-      {/* Funcionalidades */}
-      <div style={{ 
-        padding: '15px', 
-        border: '1px solid #ddd', 
-        borderRadius: '6px',
-        backgroundColor: '#fff'
-      }}>
-        <h3 style={{ margin: '0 0 15px 0' }}>🚀 Progreso de Implementación</h3>
-        <ul style={{ paddingLeft: '20px' }}>
-          <li>✅ Plugin base funcionando</li>
-          <li>✅ Selector de Collection Types funcionando</li>
-          <li>🔄 Próximo: Reglas de validación...</li>
-          <li>⏳ Próximo: Generador de plantillas...</li>
-          <li>⏳ Próximo: Carga de archivos...</li>
-        </ul>
-      </div>
-
+      
       {/* Resultados de Importación */}
 {importResults && (
   <div style={{ 
@@ -776,9 +716,7 @@ const handleImportFile = async () => {
   </div>
 )}
 
-      <div style={{ marginTop: '20px', fontSize: '12px', color: '#999' }}>
-        🕒 Actualizado: {new Date().toLocaleString()}
-      </div>
+      
     </div>
   );
 };
